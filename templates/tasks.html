@@ -1,0 +1,86 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>TaskManager — Tasks</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+</head>
+<body class="bg">
+  <div class="wrap">
+    <header class="topbar card">
+      <div class="brand">🗂️ TaskManager</div>
+      <nav class="filters">
+        <a class="chip {% if active_filter=='all' %}active{% endif %}" href="{{ url_for('tasks_page', filter='all') }}">All</a>
+        <a class="chip {% if active_filter=='important' %}active{% endif %}" href="{{ url_for('tasks_page', filter='important') }}">Important</a>
+        <a class="chip {% if active_filter=='completed' %}active{% endif %}" href="{{ url_for('tasks_page', filter='completed') }}">Completed</a>
+        <a class="chip {% if active_filter=='incomplete' %}active{% endif %}" href="{{ url_for('tasks_page', filter='incomplete') }}">Incomplete</a>
+      </nav>
+      <div class="user">
+        <span class="u-name">Hi, {{ username }}</span>
+        <a class="btn subtle" href="{{ url_for('logout') }}">Logout</a>
+      </div>
+    </header>
+
+    <main class="grid">
+      {# Add form only on 'all' #}
+      {% if active_filter == 'all' %}
+      <section class="card panel-left">
+        <h3>Add a task</h3>
+        <form class="add-form" action="{{ url_for('add_task') }}" method="POST">
+          <input class="input" name="title" placeholder="Task title" required />
+          <input class="input" name="description" placeholder="Optional description" />
+          <button class="btn primary" type="submit">Add</button>
+        </form>
+      </section>
+      {% endif %}
+
+      <section class="card panel-right full-list {% if active_filter != 'all' %}expanded{% endif %}">
+        <h3>{% if active_filter=='all' %}Your tasks{% elif active_filter=='important' %}Important tasks{% elif active_filter=='completed' %}Completed tasks{% else %}Incomplete tasks{% endif %}</h3>
+
+        <ul class="task-list">
+          {% for t in tasks %}
+          <li class="task {% if t.get('completed') %}is-done{% endif %}">
+            <div class="info">
+              <div class="title">{{ t['title'] }}</div>
+              {% if t.get('description') %}<div class="desc">{{ t['description'] }}</div>{% endif %}
+              <div class="meta">
+                {% if t.get('important') %}<span class="pill warn">Important</span>{% endif %}
+                {% if t.get('completed') %}<span class="pill ok">Completed</span>{% else %}<span class="pill">Incomplete</span>{% endif %}
+              </div>
+            </div>
+            <div class="actions">
+              <a class="icon" title="Toggle complete" href="{{ url_for('toggle_complete', task_id=t['_id']) }}">✔</a>
+              <a class="icon" title="Toggle important" href="{{ url_for('toggle_important', task_id=t['_id']) }}">★</a>
+              <button class="icon" title="Edit" onclick="openEditModal('{{ t['_id'] }}', '{{ t['title']|e }}', '{{ t.get('description','')|e }}')">✎</button>
+              <a class="icon danger" title="Delete" onclick="return confirm('Delete this task?')" href="{{ url_for('delete_task', task_id=t['_id']) }}">🗑</a>
+            </div>
+          </li>
+          {% else %}
+            <li class="empty">No tasks yet.</li>
+          {% endfor %}
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div id="editModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" onclick="closeEditModal()"></div>
+    <div class="modal-card card">
+      <h3>Edit task</h3>
+      <form id="editForm" method="POST" action="">
+        <input id="editTitle" name="title" class="input" required />
+        <input id="editDesc" name="description" class="input" />
+        <div style="display:flex; gap:8px; margin-top:10px">
+          <button class="btn primary" type="submit">Save</button>
+          <button type="button" class="btn" onclick="closeEditModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
