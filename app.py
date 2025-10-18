@@ -3,12 +3,13 @@ from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import os
 
 app = Flask(__name__)
-app.secret_key = "change-this-secret"
+app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret")
 
-# Local MongoDB
-app.config["MONGO_URI"] = "mongodb://127.0.0.1:27017/taskmanager"
+# MongoDB - Use environment variable for production (MongoDB Atlas) or local for development
+app.config["MONGO_URI"] = os.environ.get("MONGO_URI", "mongodb://127.0.0.1:27017/taskmanager")
 mongo = PyMongo(app)
 
 users = mongo.db.users
