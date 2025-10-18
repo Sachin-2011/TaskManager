@@ -1,19 +1,37 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-from flask_pymongo import PyMongo
+from pymongo import MongoClient
 from bson.objectid import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
+import ssl
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret")
 
-# MongoDB - Use environment variable for production (MongoDB Atlas) or local for development
-app.config["MONGO_URI"] = os.environ.get("MONGO_URI", "mongodb://127.0.0.1:27017/taskmanager")
-mongo = PyMongo(app)
+# MongoDB - Direct connection with SSL support for Vercel
+mongo_uri = os.environ.get("MONGO_URI", "mongodb://127.0.0.1:27017/taskmanager")
 
-users = mongo.db.users
-tasks = mongo.db.tasks
+# Create MongoDB client with SSL configuration
+if "mongodb+srv" in mongo_uri or "mongodb.net" in mongo_uri:
+    # For MongoDB Atlas with SSL
+    client = MongoClient(
+        mongo_uri,
+        tls=True,
+        tlsAllowInvalidCertificates=True,
+        serverSelectionTimeoutMS=5000,
+        connectTimeoutMS=5000,
+        socketTimeoutMS=5000
+    )
+else:
+    # For local MongoDB
+    client = MongoClient(mongo_uri)
+
+# Get database
+db = client.get_database()
+
+users = db.users
+tasks = db.tasks
 
 # ---------------- AUTH ----------------
 @app.route('/', methods=['GET', 'POST'])
