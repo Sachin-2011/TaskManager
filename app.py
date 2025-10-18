@@ -4,24 +4,18 @@ from bson.objectid import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
-import ssl
-import certifi
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret")
 
-# MongoDB - Direct connection with SSL support for Vercel
+# MongoDB - Direct connection with simplified SSL for Vercel
 mongo_uri = os.environ.get("MONGO_URI", "mongodb://127.0.0.1:27017/taskmanager")
 
-# Create MongoDB client with SSL configuration
+# Create MongoDB client with simplified configuration
 try:
     if "mongodb+srv" in mongo_uri or "mongodb.net" in mongo_uri:
-        # For MongoDB Atlas with SSL - use certifi for proper SSL certificates
-        client = MongoClient(
-            mongo_uri,
-            tlsCAFile=certifi.where(),
-            serverSelectionTimeoutMS=30000
-        )
+        # For MongoDB Atlas - use minimal SSL config
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
     else:
         # For local MongoDB
         client = MongoClient(mongo_uri)
@@ -31,7 +25,8 @@ try:
     print("✅ MongoDB connection successful!")
 except Exception as e:
     print(f"❌ MongoDB connection error: {e}")
-    client = None
+    # Don't fail completely, let it try on first request
+    client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
 
 # Get database
 db = client.get_database()
