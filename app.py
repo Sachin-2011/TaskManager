@@ -28,8 +28,8 @@ except Exception as e:
     # Don't fail completely, let it try on first request
     client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
 
-# Get database
-db = client.get_database()
+# Get database - explicitly specify database name
+db = client['taskmanager']
 
 users = db.users
 tasks = db.tasks
