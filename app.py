@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 import ssl
+import certifi
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret")
@@ -13,19 +14,24 @@ app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret")
 mongo_uri = os.environ.get("MONGO_URI", "mongodb://127.0.0.1:27017/taskmanager")
 
 # Create MongoDB client with SSL configuration
-if "mongodb+srv" in mongo_uri or "mongodb.net" in mongo_uri:
-    # For MongoDB Atlas with SSL
-    client = MongoClient(
-        mongo_uri,
-        tls=True,
-        tlsAllowInvalidCertificates=True,
-        serverSelectionTimeoutMS=5000,
-        connectTimeoutMS=5000,
-        socketTimeoutMS=5000
-    )
-else:
-    # For local MongoDB
-    client = MongoClient(mongo_uri)
+try:
+    if "mongodb+srv" in mongo_uri or "mongodb.net" in mongo_uri:
+        # For MongoDB Atlas with SSL - use certifi for proper SSL certificates
+        client = MongoClient(
+            mongo_uri,
+            tlsCAFile=certifi.where(),
+            serverSelectionTimeoutMS=30000
+        )
+    else:
+        # For local MongoDB
+        client = MongoClient(mongo_uri)
+    
+    # Test the connection
+    client.admin.command('ping')
+    print("✅ MongoDB connection successful!")
+except Exception as e:
+    print(f"❌ MongoDB connection error: {e}")
+    client = None
 
 # Get database
 db = client.get_database()
